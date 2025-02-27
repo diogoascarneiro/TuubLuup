@@ -1,9 +1,8 @@
-import { useState } from "react";
-import YouTube, { YouTubePlayer, YouTubeEvent } from "react-youtube";
+import { useState, useEffect } from "react";
+import YouTube, { YouTubePlayer } from "react-youtube";
 
 interface VideoPlayerProps {
   videoId: string;
-  onVideoIdChange: (videoId: string) => void;
   index: number;
 }
 
@@ -13,58 +12,87 @@ interface Options {
   playerVars?: {
     autoplay?: 0 | 1;
     controls?: 0 | 1;
+    disablekb?: 0 | 1;
     modestbranding?: 0 | 1;
     [key: string]: string | number | undefined;
   };
 }
 
-const VideoPlayer = ({ videoId, onVideoIdChange, index }: VideoPlayerProps) => {
+interface LoopSettings {
+  enabled: boolean;
+  startTime: number;
+  endTime: number;
+}
+
+const VideoPlayer = ({ videoId, index }: VideoPlayerProps) => {
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
-  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [loopSettings, setLoopSettings] = useState<LoopSettings>({
+    enabled: false,
+    startTime: 0,
+    endTime: 0,
+  });
 
-  const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-
-  const onReady = (event: YouTubeEvent) => {
+  const onReady = (event: { target: YouTubePlayer }) => {
     setPlayer(event.target);
   };
 
-  const togglePlay = () => {
-    if (player) {
-      if (isPlaying) {
-        player.pauseVideo();
-      } else {
-        player.playVideo();
+  // Check if video needs to loop
+  useEffect(() => {
+    if (!player || !loopSettings.enabled) return;
+
+    const checkTime = () => {
+      const currentTime = player.getCurrentTime();
+      if (currentTime >= loopSettings.endTime) {
+        player.seekTo(loopSettings.startTime, true);
       }
-      setIsPlaying(!isPlaying);
-    }
-  };
+    };
 
-  const changePlaybackRate = (rate: number) => {
-    if (player) {
-      player.setPlaybackRate(rate);
-      setPlaybackRate(rate);
-    }
-  };
+    // Check every 200ms if we need to loop
+    const intervalId = setInterval(checkTime, 200);
 
-  const handleVideoChange = (e: React.FormEvent) => {
-    e.preventDefault();
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [player, loopSettings]);
 
-    // Extract video ID from URL
-    let newId = newVideoUrl;
+  useEffect(() => {
+    // Listen for messages from the controls window
+    const handleMessage = (event: MessageEvent) => {
+      if (!player || !event.data || typeof event.data !== "object" || event.data.index !== index) {
+        return;
+      }
 
-    // Handle full YouTube URLs
-    const urlRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = newVideoUrl.match(urlRegex);
+      switch (event.data.type) {
+        case "VIDEO_PLAY":
+          player.playVideo();
+          break;
+        case "VIDEO_PAUSE":
+          player.pauseVideo();
+          break;
+        case "VIDEO_SPEED":
+          if (typeof event.data.speed === "number") {
+            player.setPlaybackRate(event.data.speed);
+          }
+          break;
+        case "VIDEO_LOOP_SETTINGS":
+          if (typeof event.data.loopSettings === "object") {
+            setLoopSettings(event.data.loopSettings);
+          }
+          break;
+        case "VIDEO_SEEK":
+          if (typeof event.data.time === "number") {
+            player.seekTo(event.data.time, true);
+          }
+          break;
+      }
+    };
 
-    if (match && match[1]) {
-      newId = match[1];
-    }
+    window.addEventListener("message", handleMessage);
 
-    onVideoIdChange(newId);
-    setNewVideoUrl("");
-  };
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [player, index]);
 
   const opts: Options = {
     height: "100%",
@@ -72,6 +100,7 @@ const VideoPlayer = ({ videoId, onVideoIdChange, index }: VideoPlayerProps) => {
     playerVars: {
       autoplay: 0,
       controls: 0,
+      disablekb: 1,
       modestbranding: 1,
     },
   };
@@ -79,50 +108,15 @@ const VideoPlayer = ({ videoId, onVideoIdChange, index }: VideoPlayerProps) => {
   return (
     <div className="flex flex-col h-full">
       <div className="relative flex-grow">
-        <YouTube
-          videoId={videoId}
-          opts={opts}
-          onReady={onReady}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          className="h-full w-full"
-        />
-        <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded">Video {index + 1}</div>
-      </div>
-
-      <div className="bg-gray-800 p-2 text-white">
-        <div className="flex items-center justify-between mb-2">
-          <button onClick={togglePlay} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">
-            {isPlaying ? "Pause" : "Play"}
-          </button>
-
-          <div className="flex items-center">
-            <span className="mr-2">Speed:</span>
-            <select
-              value={playbackRate}
-              onChange={(e) => changePlaybackRate(parseFloat(e.target.value))}
-              className="bg-gray-700 rounded px-2 py-1">
-              {playbackRates.map((rate) => (
-                <option key={rate} value={rate}>
-                  {rate}x
-                </option>
-              ))}
-            </select>
+        <YouTube videoId={videoId} opts={opts} onReady={onReady} className="h-full w-full" />
+        {/* Transparent overlay to prevent direct interaction with the video */}
+        <div className="absolute inset-0 z-10" />
+        <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded z-20">Video {index + 1}</div>
+        {loopSettings.enabled && (
+          <div className="absolute bottom-2 right-2 bg-purple-600/70 text-white px-2 py-1 rounded text-xs z-20">
+            Loop: {Math.floor(loopSettings.startTime)}s → {Math.floor(loopSettings.endTime)}s
           </div>
-        </div>
-
-        <form onSubmit={handleVideoChange} className="flex">
-          <input
-            type="text"
-            value={newVideoUrl}
-            onChange={(e) => setNewVideoUrl(e.target.value)}
-            placeholder="YouTube URL or video ID"
-            className="flex-grow px-2 py-1 bg-gray-700 rounded-l text-white"
-          />
-          <button type="submit" className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-r">
-            Change
-          </button>
-        </form>
+        )}
       </div>
     </div>
   );

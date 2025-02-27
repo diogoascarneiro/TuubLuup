@@ -1,14 +1,25 @@
-# uTuubLoop
+# TuubLuup
 
-A Next.js application that allows you to watch six YouTube videos simultaneously on a single screen. Each video can be controlled individually, and you can open a separate control window for better management.
+A Next.js application designed for VJs and sound artists to create immersive audiovisual experiences using YouTube videos as source material. TuubLuup allows you to display multiple YouTube videos simultaneously, creating a dynamic visual canvas for live performances, installations, or experimental sound exploration.
 
 ## Features
 
-- Display six YouTube videos in a grid layout
+- Display multiple YouTube videos (1-8) in a customizable grid layout
+- Adaptive layout that optimizes space for odd numbers of videos
 - Individual controls for each video (play/pause, speed control)
 - Change videos by providing YouTube URLs or video IDs
-- Open a separate control window for better management of all videos
+- Separate control window for better management during performances
+- Auto-hiding interface for distraction-free visual experiences
 - Responsive design that works on various screen sizes
+
+## Perfect for
+
+- VJs looking for a simple multi-video mixing tool
+- Sound artists exploring visual accompaniments
+- Audiovisual performances and installations
+- Experimental music production with visual elements
+- Live streaming with multiple video sources
+- Interactive art installations
 
 ## Technologies Used
 
@@ -29,8 +40,8 @@ A Next.js application that allows you to watch six YouTube videos simultaneously
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/utuubloop.git
-   cd utuubloop
+   git clone https://github.com/yourusername/tuubluup.git
+   cd tuubluup
    ```
 
 2. Install dependencies:
@@ -47,11 +58,24 @@ A Next.js application that allows you to watch six YouTube videos simultaneously
 
 ## Usage
 
-1. The main page displays six YouTube videos in a grid layout.
-2. Each video has basic controls (play/pause, speed control) below it.
-3. You can change a video by entering a YouTube URL or video ID in the input field below the video.
-4. Click the "Open Controls in New Window" button at the top to open a separate window with more detailed controls for all videos.
-5. Changes made in either window will be synchronized between both windows.
+1. Start by selecting how many videos you want to display (1-8)
+2. The main window displays your selected videos in an optimized grid layout
+3. Move your mouse to the top of the screen to reveal the control bar
+4. Click "Open Controls" to launch a separate window for managing all videos
+5. In the control window, you can:
+   - Change video URLs/IDs
+   - Adjust playback speed
+   - Play/pause individual videos
+   - See video titles and current status
+6. Changes made in the control window are instantly reflected in the main display
+
+## Performance Tips
+
+- For optimal performance during VJ sets, preload your videos before your performance
+- Use shorter, high-energy clips for more dynamic visuals
+- Experiment with different playback speeds to create interesting visual textures
+- For installations, consider videos with slower movements or ambient qualities
+- Use odd numbers of videos (3, 5, 7) to create asymmetrical visual interest
 
 ## License
 
