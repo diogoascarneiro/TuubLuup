@@ -36,6 +36,25 @@ const VideoPlayer = ({ videoId, index }: VideoPlayerProps) => {
     setPlayer(event.target);
   };
 
+  // Handle video state changes
+  const onStateChange = (event: { target: YouTubePlayer; data: number }) => {
+    // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+    if (event.data === 0) {
+      // Video ended
+      // Send message to controls window that video has ended
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: {
+              type: "VIDEO_ENDED",
+              index,
+            },
+          })
+        );
+      }
+    }
+  };
+
   // Check if video needs to loop
   useEffect(() => {
     if (!player || !loopSettings.enabled) return;
@@ -108,7 +127,13 @@ const VideoPlayer = ({ videoId, index }: VideoPlayerProps) => {
   return (
     <div className="flex flex-col h-full">
       <div className="relative flex-grow">
-        <YouTube videoId={videoId} opts={opts} onReady={onReady} className="h-full w-full" />
+        <YouTube
+          videoId={videoId}
+          opts={opts}
+          onReady={onReady}
+          onStateChange={onStateChange}
+          className="h-full w-full"
+        />
         {/* Transparent overlay to prevent direct interaction with the video */}
         <div className="absolute inset-0 z-10" />
         <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded z-20">Video {index + 1}</div>

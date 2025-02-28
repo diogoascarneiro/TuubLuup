@@ -18,6 +18,8 @@ const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) 
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [videoTitle, setVideoTitle] = useState<string>("");
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -77,6 +79,26 @@ const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) 
     return () => clearInterval(interval);
   }, [player, loopSettings]);
 
+  // Listen for messages from the main window
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== "object" || event.data.index !== index) {
+        return;
+      }
+
+      if (event.data.type === "VIDEO_ENDED") {
+        // Reset play state when video ends
+        setIsPlaying(false);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [index]);
+
   // Send message to parent window
   const sendMessageToParent = (type: string, data: Record<string, unknown> = {}) => {
     if (typeof window !== "undefined" && window.opener) {
@@ -100,6 +122,12 @@ const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) 
       } else {
         // Don't play the hidden player, just send message
         // player.playVideo();
+
+        // If the video has ended (current time is near the end), seek to the beginning
+        if (currentTime >= videoDuration - 0.5) {
+          sendMessageToParent("VIDEO_SEEK", { time: 0 });
+        }
+
         sendMessageToParent("VIDEO_PLAY");
       }
       setIsPlaying(!isPlaying);
@@ -118,19 +146,119 @@ const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) 
   const handleVideoChange = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Extract video ID from URL
-    let newId = newVideoUrl;
+    if (newVideoUrl.trim()) {
+      // Extract video ID from URL
+      let newId = newVideoUrl;
 
-    // Handle full YouTube URLs
-    const urlRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = newVideoUrl.match(urlRegex);
+      // Handle full YouTube URLs
+      const urlRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+      const match = newVideoUrl.match(urlRegex);
 
-    if (match && match[1]) {
-      newId = match[1];
+      if (match && match[1]) {
+        newId = match[1];
+      }
+
+      onVideoIdChange(newId);
+      setNewVideoUrl("");
     }
+  };
 
-    onVideoIdChange(newId);
-    setNewVideoUrl("");
+  // Search for videos by keyword
+  const handleKeywordSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!searchKeyword.trim()) return;
+
+    setIsSearching(true);
+
+    try {
+      // Call our API endpoint to search YouTube
+      const response = await fetch(`/api/youtube-search?q=${encodeURIComponent(searchKeyword)}`);
+
+      if (!response.ok) {
+        throw new Error("Search request failed");
+      }
+
+      const data = await response.json();
+
+      if (data.videos && data.videos.length > 0) {
+        // Get a random video from the results
+        const randomIndex = Math.floor(Math.random() * data.videos.length);
+        const randomVideoId = data.videos[randomIndex];
+
+        onVideoIdChange(randomVideoId);
+      } else {
+        // Fallback to predefined videos if no results
+        getFallbackVideo();
+      }
+    } catch (error) {
+      console.error("Error searching for videos:", error);
+      // Use fallback videos if API fails
+      getFallbackVideo();
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Fallback to predefined videos if API fails
+  const getFallbackVideo = () => {
+    // Predefined videos for different categories
+    const videoCategories: Record<string, string[]> = {
+      music: [
+        "GACNpJfzyjs",
+        "J7VNYIf39u0",
+        "cd4-UnU8lWY",
+        "rYoZgpAEkFs",
+        "qx8hrhBZJ98",
+        "5K4BlOrzlyU",
+        "_dWyKj7I9JM",
+        "5mdvajc9cHU",
+      ],
+      nature: [
+        "ydYDqZQpim8",
+        "BHACKCNDMW8",
+        "86YLFOog4GM",
+        "lM02vNMRRB0",
+        "SMKPKGW083c",
+        "6whWgvGsxdA",
+        "77ZF50ve6rs",
+        "XBPjVzSoepo",
+      ],
+      abstract: [
+        "O5RdMltKMdA",
+        "kjFCWSxpNd0",
+        "XqZsoesa55w",
+        "n_Dv4JMiwwc",
+        "eBGIQ7ZuuiU",
+        "dQw4w9WgXcQ",
+        "jfKfPfyJRdk",
+        "5qap5aO4i9A",
+      ],
+      space: [
+        "86YLFOog4GM",
+        "BHACKCNDMW8",
+        "ydYDqZQpim8",
+        "lM02vNMRRB0",
+        "SMKPKGW083c",
+        "6whWgvGsxdA",
+        "77ZF50ve6rs",
+        "XBPjVzSoepo",
+      ],
+    };
+
+    // Find matching category or default to music
+    const matchedCategory =
+      Object.keys(videoCategories).find((category) => searchKeyword.toLowerCase().includes(category)) || "music";
+
+    // Get videos for the matched category
+    const videos = videoCategories[matchedCategory];
+
+    // Select a random video from the category
+    const randomIndex = Math.floor(Math.random() * videos.length);
+    const randomVideoId = videos[randomIndex];
+
+    onVideoIdChange(randomVideoId);
+    alert("Using predefined videos as fallback. YouTube search API may be unavailable.");
   };
 
   // Set current time as loop start point
@@ -431,18 +559,47 @@ const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) 
             </div>
           </div>
 
-          <form onSubmit={handleVideoChange} className="flex flex-col md:flex-row gap-2">
-            <input
-              type="text"
-              value={newVideoUrl}
-              onChange={(e) => setNewVideoUrl(e.target.value)}
-              placeholder="YouTube URL or video ID"
-              className="flex-grow px-3 py-2 bg-gray-700 rounded md:rounded-r-none text-white"
-            />
-            <button type="submit" className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded md:rounded-l-none">
-              Change Video
-            </button>
-          </form>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* URL/ID Input */}
+            <form onSubmit={handleVideoChange} className="flex flex-col gap-2">
+              <div className="text-sm font-medium mb-1">Change by URL or ID:</div>
+              <div className="flex flex-row gap-2">
+                <input
+                  type="text"
+                  value={newVideoUrl}
+                  onChange={(e) => setNewVideoUrl(e.target.value)}
+                  placeholder="YouTube URL or video ID"
+                  className="flex-grow px-3 py-2 bg-gray-700 rounded text-white"
+                />
+                <button
+                  type="submit"
+                  className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded whitespace-nowrap"
+                  disabled={!newVideoUrl.trim()}>
+                  Change
+                </button>
+              </div>
+            </form>
+
+            {/* Keyword Search */}
+            <form onSubmit={handleKeywordSearch} className="flex flex-col gap-2">
+              <div className="text-sm font-medium mb-1">Random video by keyword:</div>
+              <div className="flex flex-row gap-2">
+                <input
+                  type="text"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  placeholder="Enter keyword to search"
+                  className="flex-grow px-3 py-2 bg-gray-700 rounded text-white"
+                />
+                <button
+                  type="submit"
+                  className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded whitespace-nowrap"
+                  disabled={isSearching || !searchKeyword.trim()}>
+                  {isSearching ? "Searching..." : "Random"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
