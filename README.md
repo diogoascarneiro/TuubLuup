@@ -1,5 +1,7 @@
 # TuubLuup
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
 A Next.js application designed for VJs and sound artists to create immersive audiovisual experiences using YouTube videos as source material. TuubLuup allows you to display multiple YouTube videos simultaneously, creating a dynamic visual canvas for live performances, installations, or experimental sound exploration.
 
 ## Features
@@ -9,6 +11,7 @@ A Next.js application designed for VJs and sound artists to create immersive aud
 - Individual controls for each video (play/pause, speed control)
 - Change videos by providing YouTube URLs or video IDs
 - Separate control window for better management during performances
+- **Tabbed interface for easy navigation between video controls**
 - Auto-hiding interface for distraction-free visual experiences
 - Responsive design that works on various screen sizes
 - **Advanced video looping with customizable start and end points**
@@ -67,6 +70,7 @@ A Next.js application designed for VJs and sound artists to create immersive aud
 3. Move your mouse to the top of the screen to reveal the control bar
 4. Click "Open Controls" to launch a separate window for managing all videos
 5. In the control window, you can:
+   - **Navigate between videos using the tabbed interface**
    - Change video URLs/IDs
    - Adjust playback speed
    - Play/pause individual videos
@@ -97,6 +101,15 @@ Discover new visual content easily:
 - **Fallback System**: If the YouTube search API is unavailable, the system falls back to predefined video collections
 - **Categories**: Try keywords like "music", "nature", "abstract", or "space" for different visual styles
 
+### Tabbed Interface
+
+The control window features a tabbed interface for managing multiple videos:
+
+- **Easy Navigation**: Switch between videos using tabs at the top of the control window
+- **Video Identification**: Each tab displays the video number and title
+- **Focused Controls**: Work with one video at a time for better organization
+- **Visual Indicators**: Active tab is highlighted for easy identification
+
 ## Performance Tips
 
 - For optimal performance during VJ sets, preload your videos before your performance
@@ -109,7 +122,19 @@ Discover new visual content easily:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+© 2025 Diogo Carneiro
+
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+
+This means you are free to:
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+- **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- **NonCommercial** — You may not use the material for commercial purposes.
+
+For more details, see the [LICENSE](LICENSE) file or visit the [Creative Commons website](https://creativecommons.org/licenses/by-nc/4.0/).
 
 ## Acknowledgments
 

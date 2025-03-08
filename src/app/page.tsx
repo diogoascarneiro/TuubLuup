@@ -64,6 +64,19 @@ export default function StartPage() {
             Launch Visual Canvas
           </button>
         </div>
+
+        <div className="mt-8 text-center text-xs text-gray-500">
+          <p>
+            © 2025 Diogo Carneiro. TuubLuup is licensed under{" "}
+            <a
+              href="https://creativecommons.org/licenses/by-nc/4.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:underline">
+              CC BY-NC 4.0
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

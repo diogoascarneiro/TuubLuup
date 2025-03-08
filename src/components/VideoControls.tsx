@@ -5,6 +5,7 @@ interface VideoControlsProps {
   videoId: string;
   index: number;
   onVideoIdChange: (newId: string) => void;
+  onTitleChange?: (title: string) => void;
 }
 
 interface LoopSettings {
@@ -13,7 +14,7 @@ interface LoopSettings {
   endTime: number;
 }
 
-const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) => {
+const VideoControls = ({ videoId, index, onVideoIdChange, onTitleChange }: VideoControlsProps) => {
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -40,7 +41,13 @@ const VideoControls = ({ videoId, index, onVideoIdChange }: VideoControlsProps) 
 
     // Get video title when player is ready
     const title = event.target.getVideoData().title;
-    setVideoTitle(title || `Video ${index + 1}`);
+    const displayTitle = title || `Video ${index + 1}`;
+    setVideoTitle(displayTitle);
+
+    // Notify parent component about the title
+    if (onTitleChange) {
+      onTitleChange(displayTitle);
+    }
 
     // Get video duration
     const duration = event.target.getDuration();
