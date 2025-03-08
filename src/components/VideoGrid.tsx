@@ -143,14 +143,48 @@ const VideoGrid = ({ videoCount = 6 }: VideoGridProps) => {
     return "grid-cols-4";
   };
 
+  // Get the grid template for rows
+  const getGridRows = () => {
+    return "grid-rows-2"; // Always use 2 rows for our layout
+  };
+
+  // Arrange videos in the grid
+  const arrangeVideos = () => {
+    // Create a copy of the videoIds array
+    const arrangedVideos = [...videoIds];
+
+    // For odd numbers of videos, move the last video to a position where it can span 2 rows
+    if (videoCount % 2 === 1 && videoCount > 1) {
+      const columns = videoCount <= 4 ? 2 : videoCount <= 6 ? 3 : 4;
+
+      // Calculate the position for the last video (last column, first row)
+      const lastVideoPosition = columns - 1;
+
+      // Get the last video ID
+      const lastVideoId = arrangedVideos.pop()!;
+
+      // Insert the last video at the calculated position
+      arrangedVideos.splice(lastVideoPosition, 0, lastVideoId);
+    }
+
+    return arrangedVideos;
+  };
+
   // Determine if a video should span multiple grid cells
   const getVideoClassName = (index: number) => {
-    // For odd numbers of videos, make the last video span the remaining space
-    if (index === videoIds.length - 1) {
-      if (videoCount === 3) return "col-span-2 row-span-1"; // Last video spans 2 columns in a 2x2 grid
-      if (videoCount === 5) return "col-span-3 row-span-1"; // Last video spans full row in a 3x2 grid
-      if (videoCount === 7) return "col-span-2 row-span-1"; // Last video spans 2 columns in a 4x2 grid
+    // For odd numbers of videos, find the video that should span 2 rows
+    if (videoCount % 2 === 1 && videoCount > 1) {
+      const columns = videoCount <= 4 ? 2 : videoCount <= 6 ? 3 : 4;
+
+      // Calculate the position for the video that should span 2 rows (last column, first row)
+      const specialPosition = columns - 1;
+
+      // If this is the video at the special position, make it span 2 rows
+      if (index === specialPosition) {
+        return "col-span-1 row-span-2";
+      }
     }
+
     return "";
   };
 
@@ -200,10 +234,10 @@ const VideoGrid = ({ videoCount = 6 }: VideoGridProps) => {
         onMouseLeave={handleHeaderMouseLeave}
       />
 
-      <div className={`grid ${getGridColumns()} gap-2 h-full w-full`}>
-        {videoIds.map((videoId, index) => (
+      <div className={`grid ${getGridColumns()} ${getGridRows()} gap-2 h-full w-full`}>
+        {arrangeVideos().map((videoId, index) => (
           <div key={index} className={`h-full w-full ${getVideoClassName(index)}`}>
-            <VideoPlayer videoId={videoId} index={index} />
+            <VideoPlayer videoId={videoId} index={videoIds.indexOf(videoId)} />
           </div>
         ))}
       </div>
